@@ -62,6 +62,7 @@ class Turbo1:
         min_cuda=1024,
         device="cpu",
         dtype="float64",
+        batch_eval=False
     ):
 
         # Very basic input checks
@@ -123,6 +124,8 @@ class Turbo1:
         if self.verbose:
             print("Using dtype = %s \nUsing device = %s" % (self.dtype, self.device))
             sys.stdout.flush()
+
+        self.batch_eval = batch_eval
 
         # Initialize parameters
         self._restart()
@@ -247,7 +250,7 @@ class Turbo1:
             # Generate and evalute initial design points
             X_init = latin_hypercube(self.n_init, self.dim)
             X_init = from_unit_cube(X_init, self.lb, self.ub)
-            fX_init = np.array([[self.f(x)] for x in X_init])
+            fX_init = self.f(X_init) if self.batch_eval else np.array([[self.f(x)] for x in X_init])
 
             # Update budget and set as initial data for this TR
             self.n_evals += self.n_init
@@ -281,7 +284,7 @@ class Turbo1:
                 X_next = from_unit_cube(X_next, self.lb, self.ub)
 
                 # Evaluate batch
-                fX_next = np.array([[self.f(x)] for x in X_next])
+                fX_next = self.f(X_next) if self.batch_eval else np.array([[self.f(x)] for x in X_next])
 
                 # Update trust region
                 self._adjust_length(fX_next)
